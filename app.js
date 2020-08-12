@@ -13,7 +13,7 @@ const app = express()
 
 //const baseURL = "https://k47zz7whsj.execute-api.ap-southeast-2.amazonaws.com/Prod";
 const clientId = "6awtx57XeNg8M5SAiUo1tViox6IeeJC7";
-const clientSecret = "wUApSWguhg9s-rFZtU0vZclf9O5V_dXrKUN7fKHDWONFSIZLbDs4QrUOosCU6Xsm";
+const clientSecret = "XXXX";
 
 const auth0Domain = 'abbaspour.auth0.com';
 const issuer = `https://${auth0Domain}`;
