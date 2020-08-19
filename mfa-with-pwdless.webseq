@@ -1,0 +1,48 @@
+title Auth0 MFA with Passwordless OTP
+
+participant user as u
+participant App as app
+participant Auth0 as a0
+participant Rules as r
+participant Companion App as c
+
+
+
+u -> +app: /login
+app -> +a0: /authorize? {client=conf_app, response_type=code}
+a0 -> u: Request First Factor
+u --> a0: Supply credentials
+
+a0 -> a0: vaidate credentials
+a0 -> +r: execure Rules
+
+r -> r: app === conf_app?
+r -> a0: POST /passowrdless/start \n {comp_app_id, comp_app_secret, phone_number: profile.phone_number}
+a0 --> u: OOB SMS OTP
+
+r -> r: tttt=hs256({sub, phone_number}, shared_secret=xxxx)
+r --> -a0: context.redirect = https://compapp.my.biz? { token=tttt }
+
+a0 -> +c: 302 https://compapp.my.biz? { token=tttt, state=ssss }
+
+c -> u: OTP plz?
+u --> c: oob
+
+c -> c: verify_hs256(tttt, shared_secret=xxxx)
+c -> + a0: POST /oauth/token \n {client_id=comp_app_id, comp_app_secret, phone_number: tttt.phone_number, otp=oob }
+a0 --> -c: id_token
+
+c -> c: id_token.sub === tttt.sub ?
+
+c -> c: response token rrrr=hs256({sub, success=true}, shared_secret=xxxx)
+c -> a0: 302 GET /continue?state=ssss&token=rrrr
+
+a0 -> + r: continue
+r -> r: verify_hs256(rrrr, shared_secret=xxxx)
+
+r -> r: rrrr.success === true?
+r --> - a0: callback(null, user, context)
+
+a0 -> -app: /callback?code=cccc
+
+app -> -u: secret page

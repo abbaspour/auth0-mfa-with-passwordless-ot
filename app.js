@@ -6,8 +6,10 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const request = require("request");
+const jwksClient = require('jwks-rsa');
 
-const awsServerlessExpressMiddleware = require('aws-serverless-express/middleware')
+//const awsServerlessExpressMiddleware = require('aws-serverless-express/middleware')
+//router.use(awsServerlessExpressMiddleware.eventContext());
 
 const app = express()
 
@@ -22,10 +24,8 @@ const router = express.Router();
 
 router.use(cors());
 router.use(bodyParser.json());
-router.use(bodyParser.json());
 router.use(bodyParser.urlencoded({extended: true}));
 
-//router.use(awsServerlessExpressMiddleware.eventContext());
 
 // NOTE: tests can't find the views directory without this
 app.set('views', path.join(__dirname, 'views'));
@@ -45,9 +45,8 @@ function createToken(clientId, clientSecret, issuer, payload) {
 }
 
 function passwordlessSignIn(phone_number, otp, cb) {
-    var request = require("request");
 
-    var options = {
+    let options = {
         method: 'POST',
         url: `https://${auth0Domain}/oauth/token`,
         headers: {'content-type': 'application/json'},
@@ -73,14 +72,16 @@ function passwordlessSignIn(phone_number, otp, cb) {
             return cb(body);
         }
 
-        var jwksClient = require('jwks-rsa');
-        var client = jwksClient({
-            jwksUri: `https://${auth0Domain}/.well-known/jwks.json`
+        let client = jwksClient({
+            jwksUri: `https://${auth0Domain}/.well-known/jwks.json`,
+            cache: true,
+            rateLimit: true,
+            jwksRequestsPerMinute: 5,
         });
 
         function getKey(header, callback) {
             client.getSigningKey(header.kid, function (err, key) {
-                var signingKey = key.publicKey || key.rsaPublicKey;
+                let signingKey = key.publicKey || key.rsaPublicKey;
                 callback(null, signingKey);
             });
         }
