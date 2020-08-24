@@ -1,14 +1,17 @@
+// noinspection JSUnusedGlobalSymbols
 function preRedirect(user, context, callback) {
 
-    if(context.protocol === "redirect-callback")
+    if (context.protocol === "redirect-callback")
         return callback(null, user, context);
 
+    // noinspection JSUnresolvedVariable
     const securedClient = configuration.HIGH_PRIVILEGED_CLIENT_IDS.indexOf(context.clientID) !== -1;
     const companionAppClientId = configuration.COMPANION_APP_CLIENT_ID;
     const companionAppClientSecret = configuration.COMPANION_APP_CLIENT_SECRET;
+    const companionAppUrl = configuration.COMPANION_APP_URL;
     const issuer = `https://${auth0.domain}`;
 
-    if(context.connection === 'sms' && context.clientID !== companionAppClientId) {
+    if (context.connection === 'sms' && context.clientID !== companionAppClientId) {
         return callback('sms connection is for companion app only', user, context);
     }
 
@@ -21,7 +24,7 @@ function preRedirect(user, context, callback) {
     let phone_number = user.app_metadata.phone_number;
 
     if (presentMFA) {
-        if(!phone_number) {
+        if (!phone_number) {
             return callback('Unable to MFA. User has no registered phone number', user, context);
         }
 
@@ -30,10 +33,11 @@ function preRedirect(user, context, callback) {
         const data = {sub: user.user_id, phone_number: phone_number};
         const token = global.createToken(companionAppClientId, companionAppClientSecret, issuer, data);
 
-        global.sendSMS(companionAppClientId, companionAppClientSecret, phone_number, callback);
+        // noinspection JSUnresolvedVariable
+        global.sendSMS(auth0.domain, companionAppClientId, companionAppClientSecret, phone_number, callback);
 
         context.redirect = {
-          	url: "http://app.localtest.me:3000?token=" + token
+            url: `${companionAppUrl}?token=${token}`
         };
     }
 

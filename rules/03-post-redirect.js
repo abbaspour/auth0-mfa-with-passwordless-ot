@@ -1,3 +1,4 @@
+// noinspection JSUnusedGlobalSymbols
 function postRedirect(user, context, callback) {
     if (context.protocol !== "redirect-callback") {
         return callback(null, user, context);

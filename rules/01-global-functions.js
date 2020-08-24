@@ -1,4 +1,7 @@
+// noinspection JSUnusedGlobalSymbols
 function globalFunctions(user, context, callback) {
+
+    const NODE_AUTH0_VERSION = '2.27.0';
 
     if (!global.createToken) {
         global.createToken = function (clientId, clientSecret, issuer, payload) {
@@ -7,12 +10,14 @@ function globalFunctions(user, context, callback) {
                 audience: clientId,
                 issuer: issuer
             };
+            // noinspection JSUnresolvedVariable
             return jwt.sign(payload, clientSecret, options);
         };
     }
 
     if (!global.verifyToken) {
         global.verifyToken = function (clientId, clientSecret, issuer, token, cb) {
+            // noinspection JSUnresolvedVariable
             jwt.verify(
                 token,
                 clientSecret, {
@@ -25,10 +30,10 @@ function globalFunctions(user, context, callback) {
     }
 
     if (!global.sendSMS) {
-        global.sendSMS = function (clientId, clientSecret, phone_number, callback) {
-            let AuthenticationClient = require('auth0@2.27.0').AuthenticationClient;
+        global.sendSMS = function (domain, clientId, clientSecret, phone_number, callback) {
+            let AuthenticationClient = require(`auth0@${NODE_AUTH0_VERSION}`).AuthenticationClient;
             let auth0 = new AuthenticationClient({
-                domain: 'abbaspour.auth0.com',
+                domain: domain,
                 clientId: clientId,
                 clientSecret: clientSecret
             });

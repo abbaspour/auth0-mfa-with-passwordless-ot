@@ -52,9 +52,9 @@ function getKey(header, callback) {
     });
 }
 
-
 function passwordlessSignIn(phone_number, otp, cb) {
-
+    // raw passwordless sign-in until we get support in node sdk:
+    // https://auth0team.atlassian.net/servicedesk/customer/portal/34/ESD-8225
     let options = {
         method: 'POST',
         url: `${issuer}/oauth/token`,
