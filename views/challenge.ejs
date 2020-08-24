@@ -6,9 +6,11 @@
   <%= error %>
   <br/>
 
+  We just sent an OTP to number: <%= phone_number %><br/>
+
   <form method="post" action="/resume">
-    <label for="otp">OTP</label>
-    <input type="number" name="otp" id="otp">
+    <label for="otp">Please enter OTP code</label>
+    <input type="number" name="otp" id="otp" autofocus>
     <input type="hidden" name="state" value="<%= state %>" >
     <input type="hidden" name="token" value="<%= token %>" >
     <input type="submit" value="resume">

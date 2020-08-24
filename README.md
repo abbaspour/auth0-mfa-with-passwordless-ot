@@ -1,7 +1,7 @@
 # Auth0 MFA with Passwordless OTP
 
 ## Setup
-Needs an RWA companion app with Passwordless-OTP grant enabled.
+Needs an RWA companion app with Passwordless-OTP grant enabled. populate `.env` from `env-sample`. 
 
 > Note: This app assumes Passwordless identity is already linked to authenticating user.   
 
