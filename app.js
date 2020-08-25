@@ -1,12 +1,10 @@
 'use strict'
 
-const path = require('path');
 const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const jwt = require('jsonwebtoken');
-const request = require('request');
-const jwksClient = require('jwks-rsa');
+const AuthenticationClient = require('auth0').AuthenticationClient;
 
 //const awsServerlessExpressMiddleware = require('aws-serverless-express/middleware')
 //router.use(awsServerlessExpressMiddleware.eventContext());
@@ -16,7 +14,14 @@ const app = express();
 //const baseURL = "https://k47zz7whsj.execute-api.ap-southeast-2.amazonaws.com/Prod";
 const clientId = process.env.CLIENT_ID;
 const clientSecret = process.env.CLIENT_SECRET;
-const issuer = `https://${process.env.AUTH0_DOMAIN}`;
+const domain = process.env.AUTH0_DOMAIN;
+const issuer = `https://${domain}`;
+
+const auth = new AuthenticationClient({
+    domain,
+    clientId,
+    clientSecret
+});
 
 const router = express.Router();
 
@@ -26,7 +31,7 @@ router.use(bodyParser.urlencoded({extended: true}));
 
 
 // NOTE: tests can't find the views directory without this
-app.set('views', path.join(__dirname, 'views'));
+//app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 function createToken(clientId, clientSecret, issuer, payload) {
@@ -38,63 +43,26 @@ function createToken(clientId, clientSecret, issuer, payload) {
     return jwt.sign(payload, clientSecret, options);
 }
 
-const jwks_client = jwksClient({
-    jwksUri: `${issuer}/.well-known/jwks.json`,
-    cache: true,
-    rateLimit: true,
-    jwksRequestsPerMinute: 5,
-});
-
-function getKey(header, callback) {
-    jwks_client.getSigningKey(header.kid, function (err, key) {
-        let signingKey = key.publicKey || key.rsaPublicKey;
-        callback(null, signingKey);
-    });
-}
-
 function passwordlessSignIn(phone_number, otp, cb) {
     // raw passwordless sign-in until we get support in node sdk:
     // https://auth0team.atlassian.net/servicedesk/customer/portal/34/ESD-8225
-    let options = {
-        method: 'POST',
-        url: `${issuer}/oauth/token`,
-        headers: {'content-type': 'application/json'},
-        body: {
-            grant_type: 'http://auth0.com/oauth/grant-type/passwordless/otp',
-            client_id: clientId,
-            client_secret: clientSecret,
-            username: phone_number,
-            otp: otp,
-            realm: 'sms',
-            //audience: 'your-api-audience',
-            scope: 'openid profile'
-        },
-        json: true
-    };
 
-    request(options, function (error, response, body) {
+    auth.oauth.oauthWithIDTokenValidation.create({type: 'token'}, {
+        client_id: clientId,
+        client_secret: clientSecret,
+        grant_type: 'http://auth0.com/oauth/grant-type/passwordless/otp',
+        realm: 'sms',
+        connection: 'sms',
+        username: phone_number,
+        scope: 'openid profile',
+        otp
+    }, (error, res) => {
         if (error) {
             console.log('error in pwdless sign in', error);
             return cb(error);
         }
-        if (response.statusCode !== 200) {
-            return cb(body);
-        }
-
-        //console.log(body);
-
-        jwt.verify(body.id_token, getKey, options, function (err, decoded) {
-            if (err) {
-                console.log('invalid id_token', err);
-                return cb('invalid id_token');
-            }
-
-            //console.log('id_token decoded: ' + JSON.stringify(decoded));
-            return cb(null, decoded);
-        });
-
+        return cb(null, jwt.decode(res.id_token));
     });
-
 }
 
 function decodeToken(res, state, token) {
